@@ -1000,7 +1000,7 @@ function setDemo(on){
 }
 
 function resize(){const r=el.game.getBoundingClientRect();state.W=r.width;state.H=r.height;el.canvas.width=state.W*state.dpr;el.canvas.height=state.H*state.dpr;ctx.setTransform(state.dpr,0,0,state.dpr,0,0);buildPins()}
-function buildPins(){state.pins=[];const top=state.H*.50,bottom=state.H*.77,rows=7;for(let r=0;r<rows;r++)for(let c=0;c<7;c++){const x=state.W*(.14+(c+(r%2?.5:0))*(.72/7)),y=top+r*((bottom-top)/rows);if(!(Math.abs(x-state.W*.5)<27&&r>3))state.pins.push({x,y,r:3.5});}state.pins.push({x:state.W*.43,y:state.H*.75,r:4.5},{x:state.W*.57,y:state.H*.75,r:4.5});for(let i=0;i<5;i++){pins.push({x:state.W*(.36+i*.07),y:state.H*(.69+i*.012),r:3.2})};}
+function buildPins(){state.pins=[];const top=state.H*.50,bottom=state.H*.77,rows=7;for(let r=0;r<rows;r++)for(let c=0;c<7;c++){const x=state.W*(.14+(c+(r%2?.5:0))*(.72/7)),y=top+r*((bottom-top)/rows);if(!(Math.abs(x-state.W*.5)<27&&r>3))state.pins.push({x,y,r:3.5});}state.pins.push({x:state.W*.43,y:state.H*.75,r:4.5},{x:state.W*.57,y:state.H*.75,r:4.5});for(let i=0;i<5;i++){state.pins.push({x:state.W*(.36+i*.07),y:state.H*(.69+i*.012),r:3.2})};}
 function shoot(){if(state.balls<=0){setText('NO COIN','持ち玉がありません');return;}sfx('shot',.18);state.balls--;ui();const right=state.rush;state.shots.push({x:right?state.W*.10:state.W*.90,y:state.H*.92,vx:right?(2.4+Math.random()*1.35):(-2.4-Math.random()*1.35),vy:-9.7-Math.random()*2.0,r:5,spin:(Math.random()-.5)*.08,active:true});}
 function collide(b,p){const dx=b.x-p.x,dy=b.y-p.y,d=Math.hypot(dx,dy),m=b.r+p.r;if(d>0&&d<m){const nx=dx/d,ny=dy/d;b.x=p.x+nx*m;b.y=p.y+ny*m;const dot=b.vx*nx+b.vy*ny;if(dot<0){b.vx-=1.65*dot*nx;b.vy-=1.65*dot*ny;}b.vx*=.885;b.vy*=.885;b.vx+=(Math.random()-.5)*.45;}}
 function physics(){for(const b of state.shots){if(!b.active)continue;b.vy+=.235;b.vx*=.998;b.vy*=.999;b.vx+=b.spin;b.x+=b.vx;b.y+=b.vy;if(b.x<b.r){b.x=b.r;b.vx=Math.abs(b.vx)*.78;}if(b.x>state.W-b.r){b.x=state.W-b.r;b.vx=-Math.abs(b.vx)*.78;}state.pins.forEach(p=>collide(b,p));const cx=state.W*.5,cy=state.H*.81;if(Math.hypot(b.x-cx,b.y-cy)<16+b.r){b.active=false;b.y=state.H+50;queueSpin();}if(b.y>state.H+30)b.active=false;}state.shots=state.shots.filter(b=>b.active||b.y<=state.H);}
@@ -1016,6 +1016,14 @@ function buildReliabilityTable(){
   el.relGrid.innerHTML=rows.map(([a,b])=>`<span>${a}</span><b>${b}</b>`).join('');
 }
 
+let lastFireTap=0;
+el.fire.addEventListener('click',e=>{
+  const now=performance.now();
+  if(now-lastFireTap<250)return;
+  lastFireTap=now;
+  startBgm();
+  if(!state.firing)shoot();
+});
 el.fire.addEventListener('pointerdown',beginFire,{passive:false});el.fire.addEventListener('pointerup',endFire,{passive:false});el.fire.addEventListener('pointercancel',endFire,{passive:false});
 el.fire.addEventListener('touchstart',beginFire,{passive:false});el.fire.addEventListener('touchend',endFire,{passive:false});window.addEventListener('pointerup',endFire,{passive:false});window.addEventListener('touchend',endFire,{passive:false});window.addEventListener('blur',()=>state.firing=false);
 el.custom.addEventListener('click',e=>{e.stopPropagation();el.customPanel.style.display=el.customPanel.style.display==='block'?'none':'block';});
@@ -1065,6 +1073,7 @@ el.auto.addEventListener('dblclick',()=>{el.result.style.display=el.result.style
 el.rushStyle.addEventListener('click',()=>{state.rushStyle=state.rushStyle==='battle'?'impact':state.rushStyle==='impact'?'notice':'battle';setRushStyleUI();setRushTheme();el.sub.textContent=state.rushStyle==='battle'?'RUSH: バトル告知':state.rushStyle==='impact'?'RUSH: 一撃告知':'RUSH: 完全告知';});
 el.sound.addEventListener('click',()=>{state.soundOn=!state.soundOn;el.sound.innerHTML=`音<br>${state.soundOn?'ON':'OFF'}`;updateBgm();if(state.soundOn)sfx('start',.5);});
 window.addEventListener('resize',resize);
+const bootStatus=document.querySelector('#bootStatus');if(bootStatus){bootStatus.textContent='JS READY';setTimeout(()=>bootStatus.style.opacity='.25',1500);}
 window.addEventListener('error',e=>{console.error('Runtime error:',e.error||e.message);setText('ERROR',e.message||'JavaScriptエラー');});
 window.addEventListener('unhandledrejection',e=>console.error('Unhandled rejection:',e.reason));
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(err=>console.warn('SW registration failed',err)));
@@ -1145,5 +1154,8 @@ window.__PACHINKO_DEBUG__={
   forceLightning:()=>{state.rush=true;state.lightning=true;state.st=CFG.st;document.body.classList.add('rush');el.rushCounter.style.display='block';el.mode.textContent='LIGHTNING RUSH 1/12.8';ui();},
   setBalls:n=>{state.balls=Math.max(0,Math.floor(Number(n)||0));ui();}
 };
-setRushStyleUI();setSevenMode('on');buildReliabilityTable();resize();ui();requestAnimationFrame(loop);
+setRushStyleUI();setSevenMode('on');buildReliabilityTable();
+try{resize()}catch(e){console.error('resize init failed',e)}
+try{ui()}catch(e){console.error('ui init failed',e)}
+requestAnimationFrame(loop);
 })();
