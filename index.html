@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="VR Sword Pachinko">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="style.css?v=102">
+<link rel="stylesheet" href="style.css?v=103">
 <title>VR Sword Pachinko V10 - Debugged Fan Prototype</title>
 </head>
 <body>
@@ -23,7 +23,19 @@
 
   <main id="game">
     <div id="cabinetArt"></div>
-    <canvas id="canvas"></canvas>
+    
+<div id="cabinetFx" aria-hidden="true">
+  <div class="cabTopBlade"></div>
+  <div class="cabLeftSword"></div>
+  <div class="cabRightSword"></div>
+  <div class="cabLeftCrystal"></div>
+  <div class="cabRightCrystal"></div>
+  <div class="cabLowerWing left"></div>
+  <div class="cabLowerWing right"></div>
+  <div class="cabPulseRing"></div>
+</div>
+<div id="customBgLayer" aria-hidden="true"></div>
+<canvas id="canvas"></canvas>
 <div id="visualFx">
   <div id="skyLayer"></div>
   <div id="gridLayer"></div>
@@ -78,7 +90,7 @@
       <div class="customTitle">CUSTOMIZE</div>
       <button data-mode="off">7ブル OFF</button>
       <button data-mode="on" class="active">7ブル ON</button>
-      <button data-mode="redup">赤7ブルUP</button><button id="reliabilityBtn" type="button">信頼度を見る</button><button id="historyBtn">履歴</button><button id="achievementBtn">実績</button><button id="settingsBtn">設定</button><button id="audioTestBtn">音TEST</button><button id="musicCustomBtn">楽曲</button><button id="dataBtn">DATA</button><button id="catalogBtn">図鑑</button><button id="demoBtn">DEMO<br>OFF</button>
+      <button data-mode="redup">赤7ブルUP</button><button id="reliabilityBtn" type="button">信頼度を見る</button><button id="historyBtn">履歴</button><button id="achievementBtn">実績</button><button id="settingsBtn">設定</button><button id="audioTestBtn">音TEST</button><button id="musicCustomBtn">楽曲</button><button id="imageCustomBtn">画像</button><button id="dataBtn">DATA</button><button id="catalogBtn">図鑑</button><button id="demoBtn">DEMO<br>OFF</button>
     </div>
     <div id="reliabilityPanel">
       <div class="resultTitle">演出信頼度・単体目安</div>
@@ -157,6 +169,12 @@
  <div class="sevenRoleDigit">7</div>
  <div class="sevenRoleLock">SYSTEM BREAK</div>
 </div>
+
+<div id="imageCustomPanel" class="v14Panel">
+  <div class="v14Head"><b>CUSTOM VISUAL</b><button id="imageCustomClose">×</button></div>
+  <div class="v14Summary">端末の画像を演出背景へ登録できます。公式画像は同梱していません。</div>
+  <div id="imageCustomList"></div>
+</div>
 </main>
 
   <footer id="controls">
@@ -165,7 +183,7 @@
     <button id="autoBtn">AUTO<br>OFF</button><button id="rushStyleBtn">RUSH<br>バトル</button>
   </footer>
 </div>
-<script src="laws.js?v=102"></script>
-<script src="app.js?v=102"></script>
+<script src="laws.js?v=103"></script>
+<script src="app.js?v=103"></script>
 </body>
 </html>

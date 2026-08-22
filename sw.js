@@ -1,5 +1,5 @@
-const CACHE='vr-sword-pachinko-v1-02-real-board';
-const CORE=['./','./index.html','./style.css?v=102','./app.js?v=102','./laws.js?v=102','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
+const CACHE='vr-sword-pachinko-v1-03-cabinet-visual';
+const CORE=['./','./index.html','./style.css?v=103','./app.js?v=103','./laws.js?v=103','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 self.addEventListener('install',e=>{
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE).then(c=>Promise.all(CORE.map(u=>c.add(u).catch(()=>null)))));

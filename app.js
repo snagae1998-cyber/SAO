@@ -11,7 +11,7 @@ const el={
   seven:$('#sevenGimmick'), flash:$('#flash'), fire:$('#fire'), custom:$('#custom'), customPanel:$('#customPanel'),
   sound:$('#soundBtn'), auto:$('#autoBtn'), rushStyle:$('#rushStyleBtn'), result:$('#resultPanel'),
   resSpins:$('#resSpins'), resWins:$('#resWins'), resBest:$('#resBest'), resDiff:$('#resDiff'),
-  relPanel:$('#reliabilityPanel'), relGrid:$('#relGrid'), relBtn:$('#reliabilityBtn'), relClose:$('#relClose'), lawBanner:$('#lawBanner'), hiddenLawBadge:$('#hiddenLawBadge'),flowStep:$('#flowStep'),flowBar:$('#flowBar'),historyBtn:$('#historyBtn'),achievementBtn:$('#achievementBtn'),historyPanel:$('#historyPanel'),achievementPanel:$('#achievementPanel'),historyClose:$('#historyClose'),achievementClose:$('#achievementClose'),historySummary:$('#historySummary'),historyList:$('#historyList'),achievementSummary:$('#achievementSummary'),achievementList:$('#achievementList'),settingsBtn:$('#settingsBtn'),audioTestBtn:$('#audioTestBtn'),musicCustomBtn:$('#musicCustomBtn'),musicCustomPanel:$('#musicCustomPanel'),musicCustomClose:$('#musicCustomClose'),musicCustomList:$('#musicCustomList'),sevenRole:$('#sevenRole'),audioTestPanel:$('#audioTestPanel'),audioTestClose:$('#audioTestClose'),demoBtn:$('#demoBtn'),settingsPanel:$('#settingsPanel'),settingsClose:$('#settingsClose'),bgmVol:$('#bgmVol'),seVol:$('#seVol'),autoSpeed:$('#autoSpeed'),effectDensity:$('#effectDensity'),sensoryLevel:$('#sensoryLevel'),resetDataBtn:$('#resetDataBtn'),dataBtn:$('#dataBtn'),catalogBtn:$('#catalogBtn'),dataPanel:$('#dataPanel'),catalogPanel:$('#catalogPanel'),dataClose:$('#dataClose'),catalogClose:$('#catalogClose'),dataSummary:$('#dataSummary'),dataChart:$('#dataChart'),catalogSummary:$('#catalogSummary'),catalogList:$('#catalogList'),slashFx:$('#slashFx'),assistCutin:$('#assistCutin'),assistName:$('#assistName'),bossScene:$('#bossScene'),bossTitleFx:$('#bossTitleFx'),bonusScene:$('#bonusScene'),bonusTitleFx:$('#bonusTitleFx'),bonusCountFx:$('#bonusCountFx'),rushScene:$('#rushScene'),rushTitleFx:$('#rushTitleFx')
+  relPanel:$('#reliabilityPanel'), relGrid:$('#relGrid'), relBtn:$('#reliabilityBtn'), relClose:$('#relClose'), lawBanner:$('#lawBanner'), hiddenLawBadge:$('#hiddenLawBadge'),flowStep:$('#flowStep'),flowBar:$('#flowBar'),historyBtn:$('#historyBtn'),achievementBtn:$('#achievementBtn'),historyPanel:$('#historyPanel'),achievementPanel:$('#achievementPanel'),historyClose:$('#historyClose'),achievementClose:$('#achievementClose'),historySummary:$('#historySummary'),historyList:$('#historyList'),achievementSummary:$('#achievementSummary'),achievementList:$('#achievementList'),settingsBtn:$('#settingsBtn'),audioTestBtn:$('#audioTestBtn'),musicCustomBtn:$('#musicCustomBtn'),musicCustomPanel:$('#musicCustomPanel'),musicCustomClose:$('#musicCustomClose'),musicCustomList:$('#musicCustomList'),imageCustomBtn:$('#imageCustomBtn'),imageCustomPanel:$('#imageCustomPanel'),imageCustomClose:$('#imageCustomClose'),imageCustomList:$('#imageCustomList'),customBgLayer:$('#customBgLayer'),sevenRole:$('#sevenRole'),audioTestPanel:$('#audioTestPanel'),audioTestClose:$('#audioTestClose'),demoBtn:$('#demoBtn'),settingsPanel:$('#settingsPanel'),settingsClose:$('#settingsClose'),bgmVol:$('#bgmVol'),seVol:$('#seVol'),autoSpeed:$('#autoSpeed'),effectDensity:$('#effectDensity'),sensoryLevel:$('#sensoryLevel'),resetDataBtn:$('#resetDataBtn'),dataBtn:$('#dataBtn'),catalogBtn:$('#catalogBtn'),dataPanel:$('#dataPanel'),catalogPanel:$('#catalogPanel'),dataClose:$('#dataClose'),catalogClose:$('#catalogClose'),dataSummary:$('#dataSummary'),dataChart:$('#dataChart'),catalogSummary:$('#catalogSummary'),catalogList:$('#catalogList'),slashFx:$('#slashFx'),assistCutin:$('#assistCutin'),assistName:$('#assistName'),bossScene:$('#bossScene'),bossTitleFx:$('#bossTitleFx'),bonusScene:$('#bonusScene'),bonusTitleFx:$('#bonusTitleFx'),bonusCountFx:$('#bonusCountFx'),rushScene:$('#rushScene'),rushTitleFx:$('#rushTitleFx')
 };
 const ctx=el.canvas.getContext('2d');
 const reels=$$('.reel'), holds=$$('.hold'), customButtons=[...document.querySelectorAll('#customPanel [data-mode]')];
@@ -238,6 +238,80 @@ function psycho(name){
 
 
 
+
+const CUSTOM_IMAGE_SLOTS=['normal','sp','dual','jackpot','rush','lightning'];
+const CUSTOM_IMAGE_DB='vrSwordCustomImagesV103',CUSTOM_IMAGE_STORE='images';
+let customImageMeta={};
+let currentImageUrl='';
+function loadCustomImageMeta(){
+ try{customImageMeta=JSON.parse(localStorage.getItem('vrSwordCustomImageMetaV103')||'{}')||{}}
+ catch(e){customImageMeta={}}
+}
+function saveCustomImageMeta(){try{localStorage.setItem('vrSwordCustomImageMetaV103',JSON.stringify(customImageMeta))}catch(e){}}
+function imageDb(){
+ return new Promise((resolve,reject)=>{
+  const r=indexedDB.open(CUSTOM_IMAGE_DB,1);
+  r.onupgradeneeded=()=>{const db=r.result;if(!db.objectStoreNames.contains(CUSTOM_IMAGE_STORE))db.createObjectStore(CUSTOM_IMAGE_STORE)};
+  r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);
+ });
+}
+async function customImagePut(slot,file){
+ const db=await imageDb();
+ await new Promise((res,rej)=>{
+  const tx=db.transaction(CUSTOM_IMAGE_STORE,'readwrite');
+  tx.objectStore(CUSTOM_IMAGE_STORE).put(file,slot);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);
+ });
+ customImageMeta[slot]={name:file.name,type:file.type};saveCustomImageMeta();
+}
+async function customImageGet(slot){
+ try{
+  const db=await imageDb();
+  return await new Promise((res,rej)=>{
+   const tx=db.transaction(CUSTOM_IMAGE_STORE,'readonly'),r=tx.objectStore(CUSTOM_IMAGE_STORE).get(slot);
+   r.onsuccess=()=>res(r.result||null);r.onerror=()=>rej(r.error);
+  });
+ }catch(e){return null}
+}
+async function customImageDelete(slot){
+ try{
+  const db=await imageDb();
+  await new Promise((res,rej)=>{const tx=db.transaction(CUSTOM_IMAGE_STORE,'readwrite');tx.objectStore(CUSTOM_IMAGE_STORE).delete(slot);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error)});
+ }catch(e){}
+ delete customImageMeta[slot];saveCustomImageMeta();
+}
+async function applyCustomImage(slot){
+ if(!el.customBgLayer)return;
+ const file=await customImageGet(slot);
+ if(currentImageUrl){URL.revokeObjectURL(currentImageUrl);currentImageUrl=''}
+ if(!file){el.customBgLayer.classList.remove('on');el.customBgLayer.style.backgroundImage='';return false}
+ currentImageUrl=URL.createObjectURL(file);
+ el.customBgLayer.style.backgroundImage=`url("${currentImageUrl}")`;
+ el.customBgLayer.classList.add('on');
+ return true;
+}
+function imageSlotLabel(k){return {normal:'通常背景',sp:'SP背景',dual:'二刀流背景',jackpot:'大当たり背景',rush:'RUSH背景',lightning:'LIGHTNING背景'}[k]||k}
+function renderCustomImages(){
+ el.imageCustomList.innerHTML=CUSTOM_IMAGE_SLOTS.map(slot=>{
+  const m=customImageMeta[slot]||{};
+  return `<div class="imageSlot" data-slot="${slot}">
+   <div class="imageSlotHead"><span>${imageSlotLabel(slot)}</span><span>${m.name?'登録済み':'未登録'}</span></div>
+   <div class="imageSlotName">${m.name||'写真/ファイルから画像を選択'}</div>
+   <img class="imageSlotPreview">
+   <input class="imageFile" type="file" accept="image/*,.jpg,.jpeg,.png,.webp">
+   <div class="imageSlotControls"><button class="imagePreviewBtn">試す</button><button class="imageDeleteBtn">削除</button></div>
+  </div>`;
+ }).join('');
+ el.imageCustomList.querySelectorAll('.imageSlot').forEach(row=>{
+  const slot=row.dataset.slot,fi=row.querySelector('.imageFile'),img=row.querySelector('.imageSlotPreview');
+  fi.addEventListener('change',async()=>{const f=fi.files&&fi.files[0];if(!f)return;await customImagePut(slot,f);renderCustomImages();applyCustomImage(slot)});
+  row.querySelector('.imagePreviewBtn').addEventListener('click',async()=>{
+   const f=await customImageGet(slot);if(!f)return;
+   const u=URL.createObjectURL(f);img.src=u;img.style.display='block';img.onload=()=>setTimeout(()=>URL.revokeObjectURL(u),5000);applyCustomImage(slot);
+  });
+  row.querySelector('.imageDeleteBtn').addEventListener('click',async()=>{await customImageDelete(slot);renderCustomImages();applyCustomImage('normal')});
+ });
+}
+loadCustomImageMeta();
 const CUSTOM_MUSIC_SLOTS=['normal','sp','dual','jackpot','rush','lightning'];
 const CUSTOM_MUSIC_DB='vrSwordCustomMusicV206',CUSTOM_MUSIC_STORE='tracks';
 let customMusicMeta={};
@@ -357,7 +431,7 @@ function musicAuto(){
  if(state.rush){musicPlay(state.lightning?'lightning':'rush');return;}
  musicPlay('normal');
 }
-function startBgm(){musicAuto();
+function startBgm(){musicAuto();applyCustomImage(state.rush?(state.lightning?'lightning':'rush'):'normal');
  const c=audioCtx();if(!c||!state.soundOn||settings.bgmVol<=0||bgmOsc)return;
  bgmGain=c.createGain();bgmGain.gain.value=.004*settings.bgmVol;
  bgmOsc=c.createOscillator();bgmOsc2=c.createOscillator();
@@ -915,7 +989,7 @@ function runSpin(hold){
       el.sub.textContent=plan.assist?`${plan.assist}とSWITCH`:'SWITCH発展';
     }
     if(phase===14&&nf.sp){
-      musicPlay(plan.dual?'dual':'sp');flowSet('SP発展',70,'flow-sp');
+      applyCustomImage(plan.dual?'dual':'sp');musicPlay(plan.dual?'dual':'sp');flowSet('SP発展',70,'flow-sp');
       el.sceneTitle.textContent=plan.episode?'EPISODE SP':plan.dual?'DUAL BLADES SP':plan.bossOn?'BOSS SP':'SWORD SKILL';
       el.sub.textContent=`TITLE ${nf.titleColor.toUpperCase()} / TEXT ${nf.subtitleColor.toUpperCase()}`;
       if(plan.episode&&plan.laws[1]){showLaw(plan.laws[1]);discoverLaw(plan.laws[1]);}
@@ -966,7 +1040,7 @@ function finishSpin(plan){if(el.rushSecret)el.rushSecret.textContent='';if(!stat
   }
 }
 
-function jackpot(plan){sevenCinematic('jackpot');psycho('jackpot');flowSet('大当たり',100,'flow-final');
+function jackpot(plan){applyCustomImage('jackpot');sevenCinematic('jackpot');psycho('jackpot');flowSet('大当たり',100,'flow-final');
   resetSpinVisuals();bonusVisual(plan.allround||plan.route==='premium'?'3000 OVER DRIVE':'SWORD BONUS','777');state.wins++;career.totalWins++;career.bestChain=Math.max(career.bestChain,state.chain+1);recordHistory('大当たり',{chain:state.chain+1});addGraphPoint();checkAchievements();state.chain++;state.best=Math.max(state.best,state.chain);chainMilestoneCue();evolutionCue();state.roundPlaying=true;ui();
   const premium=plan.allround||plan.route==='premium'||Math.random()<CFG.premium3000;if(state.rush&&premium)cut('RUSH 3000\nUPGRADE',850);
   setText(premium?'PREMIUM BONUS 3000':'SWORD BONUS',premium?'3000 BONUS':'10R BONUS');cut(premium?'3000\nOVER DRIVE':'SWORD\nBONUS',1000);
@@ -976,10 +1050,10 @@ function jackpot(plan){sevenCinematic('jackpot');psycho('jackpot');flowSet('大�
 function afterBonus(){
   state.roundPlaying=false;state.spinning=false;
   if(!state.rush){if(Math.random()<CFG.rushEntry)startRush();else{state.chain=0;setText('LOG OUT','RUSH突入ならず');setTimeout(()=>{setText('LINK START','スタート入賞で変動');nextSpin();},900);}}
-  else{if(!state.lightning&&Math.random()<CFG.upperEntry){state.lightning=true;state.st=CFG.st;setRushTheme();sevenCinematic('lightning');psycho('rush');rushVisual('LIGHTNING RUSH');el.mode.textContent='LIGHTNING RUSH 1/12.8';el.sceneTitle.textContent='LIGHTNING RUSH';setText('LIGHTNING RUSH','上位RUSH LINK');cut('LIGHTNING\nBURST',1000);flash('#fff4a0');}else{state.st=CFG.st;setText(state.lightning?'LIGHTNING CONTINUE':'RUSH CONTINUE','ST100回 再セット');cut('BURST\nCONTINUE',700);}ui();setTimeout(nextSpin,650);}
+  else{if(!state.lightning&&Math.random()<CFG.upperEntry){state.lightning=true;state.st=CFG.st;setRushTheme();applyCustomImage('lightning');sevenCinematic('lightning');psycho('rush');rushVisual('LIGHTNING RUSH');el.mode.textContent='LIGHTNING RUSH 1/12.8';el.sceneTitle.textContent='LIGHTNING RUSH';setText('LIGHTNING RUSH','上位RUSH LINK');cut('LIGHTNING\nBURST',1000);flash('#fff4a0');}else{state.st=CFG.st;setText(state.lightning?'LIGHTNING CONTINUE':'RUSH CONTINUE','ST100回 再セット');cut('BURST\nCONTINUE',700);}ui();setTimeout(nextSpin,650);}
 }
-function startRush(){sevenCinematic('rush');psycho('rush');applyRushEvolution();rushVisual('SWORD RUSH');career.rushEntries++;recordHistory('SWORD RUSH');checkAchievements();state.rush=true;state.lightning=false;state.st=CFG.st;setRushTheme();document.body.classList.add('rush');el.rushCounter.style.display='block';el.mode.textContent='SWORD RUSH 1/29.9';el.sceneTitle.textContent='SWORD RUSH';setText('RUSH LINK','ST100回・高速右打ち');cut('SWORD RUSH\nLINK START',1000);flash('#b56cff');ui();setTimeout(nextSpin,1000);}
-function endRush(){addGraphPoint();state.rush=false;state.lightning=false;setRushTheme();applyRushEvolution();musicPlay('normal',true,.35);state.st=0;state.chain=0;document.body.classList.remove('rush');el.rushCounter.style.display='none';el.mode.textContent='AINCRAD MODE 1/199';el.sceneTitle.textContent='AINCRAD FIELD';setText('RUSH END','通常時へ');ui();setTimeout(()=>{setText('LINK START','スタート入賞で変動');nextSpin();},900);}
+function startRush(){applyCustomImage('rush');sevenCinematic('rush');psycho('rush');applyRushEvolution();rushVisual('SWORD RUSH');career.rushEntries++;recordHistory('SWORD RUSH');checkAchievements();state.rush=true;state.lightning=false;state.st=CFG.st;setRushTheme();document.body.classList.add('rush');el.rushCounter.style.display='block';el.mode.textContent='SWORD RUSH 1/29.9';el.sceneTitle.textContent='SWORD RUSH';setText('RUSH LINK','ST100回・高速右打ち');cut('SWORD RUSH\nLINK START',1000);flash('#b56cff');ui();setTimeout(nextSpin,1000);}
+function endRush(){addGraphPoint();state.rush=false;state.lightning=false;setRushTheme();applyRushEvolution();applyCustomImage('normal');musicPlay('normal',true,.35);state.st=0;state.chain=0;document.body.classList.remove('rush');el.rushCounter.style.display='none';el.mode.textContent='AINCRAD MODE 1/199';el.sceneTitle.textContent='AINCRAD FIELD';setText('RUSH END','通常時へ');ui();setTimeout(()=>{setText('LINK START','スタート入賞で変動');nextSpin();},900);}
 
 
 function demoStep(){
@@ -1215,6 +1289,9 @@ el.catalogBtn.addEventListener('click',()=>{renderCatalog();el.catalogPanel.styl
 el.catalogClose.addEventListener('click',()=>el.catalogPanel.style.display='none');
 
 
+
+el.imageCustomBtn.addEventListener('click',()=>{renderCustomImages();el.imageCustomPanel.style.display='block'});
+el.imageCustomClose.addEventListener('click',()=>el.imageCustomPanel.style.display='none');
 el.musicCustomBtn.addEventListener('click',()=>{renderCustomMusic();el.musicCustomPanel.style.display='block'});
 el.musicCustomClose.addEventListener('click',()=>el.musicCustomPanel.style.display='none');
 el.audioTestBtn.addEventListener('click',()=>{startBgm();el.audioTestPanel.style.display='block'});
@@ -1250,6 +1327,7 @@ el.auto.addEventListener('dblclick',()=>{el.result.style.display=el.result.style
 el.rushStyle.addEventListener('click',()=>{state.rushStyle=state.rushStyle==='battle'?'impact':state.rushStyle==='impact'?'notice':'battle';setRushStyleUI();setRushTheme();el.sub.textContent=state.rushStyle==='battle'?'RUSH: バトル告知':state.rushStyle==='impact'?'RUSH: 一撃告知':'RUSH: 完全告知';});
 el.sound.addEventListener('click',()=>{state.soundOn=!state.soundOn;el.sound.innerHTML=`音<br>${state.soundOn?'ON':'OFF'}`;updateBgm();if(state.soundOn)sfx('start',.5);});
 window.addEventListener('resize',resize);
+applyCustomImage('normal');
 const bootStatus=document.querySelector('#bootStatus');if(bootStatus){bootStatus.textContent='JS READY';setTimeout(()=>bootStatus.style.opacity='.25',1500);}
 window.addEventListener('error',e=>{console.error('Runtime error:',e.error||e.message);setText('ERROR',e.message||'JavaScriptエラー');});
 window.addEventListener('unhandledrejection',e=>console.error('Unhandled rejection:',e.reason));
@@ -1261,6 +1339,7 @@ if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.ser
 
 
 
+window.__V103_DEBUG__={version:'1.03',imageSlots:[...CUSTOM_IMAGE_SLOTS],applyImage:applyCustomImage,cabinet:true};
 window.__V20_8_DEBUG__={version:'20.8',evolution:()=>rushEvolutionState(),apply:applyRushEvolution,table:RUSH_EVOLUTION};
 window.__V20_7_DEBUG__={version:'20.7',seven:sevenCinematic,clearSeven:clearSevenSync,timeline:[0,620,980,3190,3490,3890,4750]};
 window.__V20_6_DEBUG__={version:'20.6',slots:[...CUSTOM_MUSIC_SLOTS],meta:()=>JSON.parse(JSON.stringify(customMusicMeta)),has:async(k)=>!!(await customMusicGet(k))};
