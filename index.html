@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#071521">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="VR Sword Pachinko">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="style.css">
+<title>VR Sword Pachinko V10 - Debugged Fan Prototype</title>
+</head>
+<body>
+<div id="wrap">
+  <header id="topbar">
+    <div class="stat">持ち玉<b id="balls">750</b></div>
+    <div class="stat">回転<b id="spins">0</b></div>
+    <div class="stat">BONUS<b id="wins">0</b></div>
+    <div class="stat">最高連荘<b id="best">0</b></div>
+  </header>
+
+  <main id="game">
+    <div id="cabinetArt"></div>
+    <canvas id="canvas"></canvas>
+<div id="visualFx">
+  <div id="skyLayer"></div>
+  <div id="gridLayer"></div>
+  <div id="particleLayer"></div>
+  <div id="slashFx"></div>
+  <div id="assistCutin"><div id="assistPortrait"></div><div id="assistName"></div></div>
+  <div id="bossScene"><div id="bossSilhouette"></div><div id="bossTitleFx"></div></div>
+  <div id="bonusScene"><div id="bonusTitleFx">SWORD BONUS</div><div id="bonusCountFx"></div></div>
+  <div id="rushScene"><div id="rushTitleFx">SWORD RUSH</div><div id="rushTrailFx"></div></div>
+</div>
+
+
+    <div id="hudLeft">
+      <div class="systemTag">SYSTEM</div>
+      <div id="mode">AINCRAD MODE 1/199</div><div id="stageName">第1層・はじまりの街</div>
+    </div>
+
+    <div id="floor">FLOOR <b id="floorNum">1</b></div>
+
+    <div id="hold">
+      <div class="hold"></div><div class="hold"></div><div class="hold"></div><div class="hold"></div>
+    </div>
+
+    <div id="rushCounter">DUEL RUSH <b id="stLeft">0</b>/100</div><div id="rushMilestone"></div><div id="rushSecret"></div><div id="rushEvolution"><span id="rushEvolutionLabel">LINK 0</span><div id="rushEvolutionBar"><i></i></div></div>
+
+    <section id="screen">
+      <div id="screenGlow"></div>
+      <div id="sceneTitle">START LINK</div><div id="assistLine">SOLO</div><div id="flowHud"><span id="flowStep">READY</span><div id="flowBar"><i></i></div></div><div id="lawBanner">LAW --</div><div id="hiddenLawBadge"></div>
+      <div id="enemy">《The Gleam Eyes》</div>
+      <div id="hpWrap"><div id="hpBar"></div></div>
+      <div id="reels">
+        <div class="reel">7</div><div class="reel">3</div><div class="reel">5</div>
+      </div>
+      <div id="message">LINK START</div>
+      <div id="submsg">スタート入賞で変動</div>
+    </section>
+
+    <div id="swordL"></div>
+    <div id="swordR"></div>
+    <div id="skillCutin"></div>
+    <div id="battleCard">
+      <div id="routeTag">NORMAL ROUTE</div><div id="battleRank">BOSS BATTLE</div>
+      <div id="battleName">FLOOR BOSS</div>
+      <div id="battleChance">期待度 --%</div>
+    </div>
+    <div id="awakening">DUAL BLADES<br><span>AWAKENING</span></div>
+    <div id="sevenGimmick" aria-hidden="true">
+      <div class="sevenInner">7</div>
+      <div class="sevenLabel">7 BLUE</div>
+    </div>
+    <div id="customPanel">
+      <div class="customTitle">CUSTOMIZE</div>
+      <button data-mode="off">7ブル OFF</button>
+      <button data-mode="on" class="active">7ブル ON</button>
+      <button data-mode="redup">赤7ブルUP</button><button id="reliabilityBtn" type="button">信頼度を見る</button><button id="historyBtn">履歴</button><button id="achievementBtn">実績</button><button id="settingsBtn">設定</button><button id="audioTestBtn">音TEST</button><button id="musicCustomBtn">楽曲</button><button id="dataBtn">DATA</button><button id="catalogBtn">図鑑</button><button id="demoBtn">DEMO<br>OFF</button>
+    </div>
+    <div id="reliabilityPanel">
+      <div class="resultTitle">演出信頼度・単体目安</div>
+      <div class="relGrid" id="relGrid"></div>
+      <button id="relClose" type="button">閉じる</button>
+    </div>
+    <div id="resultPanel">
+      <div class="resultTitle">PLAY RESULT</div>
+      <div>総回転 <b id="resSpins">0</b></div>
+      <div>大当たり <b id="resWins">0</b></div>
+      <div>最高連荘 <b id="resBest">0</b></div>
+      <div>差玉 <b id="resDiff">0</b></div>
+    </div>
+    <div id="flash"></div>
+    <div id="startLabel">● START ●</div>
+  
+<div id="historyPanel" class="v14Panel">
+  <div class="v14Head"><b>PLAY DATA</b><button id="historyClose">×</button></div>
+  <div id="historySummary" class="v14Summary"></div>
+  <div id="historyList" class="v14List"></div>
+</div>
+<div id="achievementPanel" class="v14Panel">
+  <div class="v14Head"><b>ACHIEVEMENTS</b><button id="achievementClose">×</button></div>
+  <div id="achievementSummary" class="v14Summary"></div>
+  <div id="achievementList" class="v14List"></div>
+</div>
+
+<div id="settingsPanel" class="v14Panel">
+  <div class="v14Head"><b>SETTINGS</b><button id="settingsClose">×</button></div>
+  <div class="settingRow"><span>BGM</span><input id="bgmVol" type="range" min="0" max="100" value="70"></div>
+  <div class="settingRow"><span>SE</span><input id="seVol" type="range" min="0" max="100" value="85"></div>
+  <div class="settingRow"><span>AUTO速度</span>
+    <select id="autoSpeed"><option value="650">ゆっくり</option><option value="430" selected>標準</option><option value="260">高速</option></select>
+  </div>
+  <div class="settingRow"><span>刺激レベル</span><select id="sensoryLevel"><option value="standard">STANDARD</option><option value="overdrive" selected>OVERDRIVE</option><option value="max">MAX</option></select></div><div class="settingRow"><span>演出密度</span>
+    <select id="effectDensity"><option value="low">低</option><option value="normal" selected>標準</option><option value="high">高</option></select>
+  </div>
+  <button id="resetDataBtn" class="dangerBtn">遊技データ初期化</button>
+</div>
+
+<div id="dataPanel" class="v14Panel">
+  <div class="v14Head"><b>DATA COUNTER</b><button id="dataClose">×</button></div>
+  <div id="dataSummary" class="v14Summary"></div>
+  <canvas id="dataChart" width="360" height="180"></canvas>
+</div>
+<div id="catalogPanel" class="v14Panel">
+  <div class="v14Head"><b>EFFECT CATALOG</b><button id="catalogClose">×</button></div>
+  <div id="catalogSummary" class="v14Summary"></div>
+  <div id="catalogList" class="v14List"></div>
+</div>
+
+<div id="audioTestPanel" class="v14Panel">
+  <div class="v14Head"><b>AUDIO LAB</b><button id="audioTestClose">×</button></div>
+  <div class="v14Summary">各演出を単独再生して比較できます。旧SEは重ねません。</div>
+  <div class="audioGrid">
+    <button data-audio="prealert">先バレ</button>
+    <button data-audio="seven">7ブル</button>
+    <button data-audio="push">PUSH</button>
+    <button data-audio="confirm">確定</button>
+    <button data-audio="jackpot">大当たり</button>
+    <button data-audio="rush">RUSH</button>
+    <button data-audio="slash">剣撃</button>
+    <button data-audio="stop">SE STOP</button><button data-music="normal">BGM NORMAL</button><button data-music="sp">BGM SP</button><button data-music="dual">BGM DUAL</button><button data-music="jackpot">BGM JACKPOT</button><button data-music="rush">BGM RUSH</button><button data-music="lightning">BGM LIGHTNING</button><button data-music="stop">BGM STOP</button>
+  </div>
+</div>
+
+<div id="musicCustomPanel" class="v14Panel">
+  <div class="v14Head"><b>CUSTOM MUSIC</b><button id="musicCustomClose">×</button></div>
+  <div class="v14Summary">端末の音源を6枠へ登録できます。開始位置も保存されます。</div>
+  <div id="musicCustomList"></div>
+</div>
+
+<div id="sevenRole" aria-hidden="true">
+ <div class="sevenRoleAura"></div>
+ <div class="sevenRoleShard s1"></div><div class="sevenRoleShard s2"></div><div class="sevenRoleShard s3"></div><div class="sevenRoleShard s4"></div>
+ <div class="sevenRoleDigit">7</div>
+ <div class="sevenRoleLock">SYSTEM BREAK</div>
+</div>
+</main>
+
+  <footer id="controls">
+    <button id="fire">PUSH 発射</button>
+    <button id="custom">7ブル<br>ON</button><button id="soundBtn">音<br>ON</button>
+    <button id="autoBtn">AUTO<br>OFF</button><button id="rushStyleBtn">RUSH<br>バトル</button>
+  </footer>
+</div>
+<script src="laws.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

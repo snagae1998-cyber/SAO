@@ -1,0 +1,16 @@
+SAO iPhone GitHub Pages Upload Pack
+
+GitHubへアップロードするのは、このフォルダの中身です。
+ZIPファイル自体をGitHubへ置かないでください。
+
+必須:
+index.html / app.js / laws.js / style.css / sw.js / manifest.webmanifest
+icon-192.png / icon-512.png
+すべての .wav ファイル
+
+GitHub Pages:
+Settings > Pages > Deploy from a branch > main > /(root) > Save
+
+公開後はSafariでページを開き、
+共有 > ホーム画面に追加
+でアプリ風に起動できます。
