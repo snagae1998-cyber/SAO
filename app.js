@@ -999,12 +999,189 @@ function setDemo(on){
  if(demoMode)demoTimer=setInterval(demoStep,1800);
 }
 
-function resize(){const r=el.game.getBoundingClientRect();state.W=r.width;state.H=r.height;el.canvas.width=state.W*state.dpr;el.canvas.height=state.H*state.dpr;ctx.setTransform(state.dpr,0,0,state.dpr,0,0);buildPins()}
-function buildPins(){state.pins=[];const top=state.H*.50,bottom=state.H*.77,rows=7;for(let r=0;r<rows;r++)for(let c=0;c<7;c++){const x=state.W*(.14+(c+(r%2?.5:0))*(.72/7)),y=top+r*((bottom-top)/rows);if(!(Math.abs(x-state.W*.5)<27&&r>3))state.pins.push({x,y,r:3.5});}state.pins.push({x:state.W*.43,y:state.H*.75,r:4.5},{x:state.W*.57,y:state.H*.75,r:4.5});for(let i=0;i<5;i++){state.pins.push({x:state.W*(.36+i*.07),y:state.H*(.69+i*.012),r:3.2})};}
-function shoot(){if(state.balls<=0){setText('NO COIN','持ち玉がありません');return;}sfx('shot',.18);state.balls--;ui();const right=state.rush;state.shots.push({x:right?state.W*.10:state.W*.90,y:state.H*.92,vx:right?(2.4+Math.random()*1.35):(-2.4-Math.random()*1.35),vy:-9.7-Math.random()*2.0,r:5,spin:(Math.random()-.5)*.08,active:true});}
-function collide(b,p){const dx=b.x-p.x,dy=b.y-p.y,d=Math.hypot(dx,dy),m=b.r+p.r;if(d>0&&d<m){const nx=dx/d,ny=dy/d;b.x=p.x+nx*m;b.y=p.y+ny*m;const dot=b.vx*nx+b.vy*ny;if(dot<0){b.vx-=1.65*dot*nx;b.vy-=1.65*dot*ny;}b.vx*=.885;b.vy*=.885;b.vx+=(Math.random()-.5)*.45;}}
-function physics(){for(const b of state.shots){if(!b.active)continue;b.vy+=.235;b.vx*=.998;b.vy*=.999;b.vx+=b.spin;b.x+=b.vx;b.y+=b.vy;if(b.x<b.r){b.x=b.r;b.vx=Math.abs(b.vx)*.78;}if(b.x>state.W-b.r){b.x=state.W-b.r;b.vx=-Math.abs(b.vx)*.78;}state.pins.forEach(p=>collide(b,p));const cx=state.W*.5,cy=state.H*.81;if(Math.hypot(b.x-cx,b.y-cy)<16+b.r){b.active=false;b.y=state.H+50;queueSpin();}if(b.y>state.H+30)b.active=false;}state.shots=state.shots.filter(b=>b.active||b.y<=state.H);}
-function draw(){ctx.clearRect(0,0,state.W,state.H);ctx.strokeStyle='rgba(83,219,255,.65)';ctx.lineWidth=4;ctx.beginPath();ctx.arc(state.W*.5,state.H*.58,Math.min(state.W*.44,state.H*.37),0,Math.PI*2);ctx.stroke();ctx.fillStyle='#d9f9ff';state.pins.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();});const cx=state.W*.5,cy=state.H*.81;ctx.fillStyle='#55dcff';ctx.beginPath();ctx.arc(cx,cy,16,0,Math.PI*2);ctx.fill();ctx.fillStyle='#07131b';ctx.beginPath();ctx.arc(cx,cy,8.5,0,Math.PI*2);ctx.fill();ctx.fillStyle=state.rush?'#c47cff':'#53dfff';ctx.beginPath();ctx.arc(state.rush?state.W*.10:state.W*.90,state.H*.92,9,0,Math.PI*2);ctx.fill();state.shots.forEach(b=>{ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#8cdfff';ctx.stroke();});}
+
+function resize(){
+ const r=el.game.getBoundingClientRect();
+ state.W=r.width;state.H=r.height;
+ el.canvas.width=state.W*state.dpr;el.canvas.height=state.H*state.dpr;
+ ctx.setTransform(state.dpr,0,0,state.dpr,0,0);
+ buildPins();
+}
+function buildPins(){
+ state.pins=[];
+ const W=state.W,H=state.H;
+ // Upper scatter nails: staggered rows. The lower middle is deliberately opened.
+ for(let r=0;r<6;r++){
+  const y=H*(.50+r*.043);
+  for(let c=0;c<7;c++){
+   const x=W*(.12+(c+(r%2?.5:0))*(.76/7));
+   if(r>=4&&Math.abs(x-W*.5)<W*.055)continue;
+   state.pins.push({x,y,r:3.2,type:'field'});
+  }
+ }
+ // Yori-kugi: visible inward guides that feed the centre without guaranteeing entry.
+ for(let i=0;i<5;i++){
+  const y=H*(.69+i*.017);
+  state.pins.push({x:W*(.23+i*.018),y,r:3.4,type:'guide'});
+  state.pins.push({x:W*(.77-i*.018),y,r:3.4,type:'guide'});
+ }
+ // Michi-kugi immediately above the heso.
+ state.pins.push({x:W*.414,y:H*.765,r:3.8,type:'road'});
+ state.pins.push({x:W*.586,y:H*.765,r:3.8,type:'road'});
+ state.pins.push({x:W*.447,y:H*.782,r:3.8,type:'road'});
+ state.pins.push({x:W*.553,y:H*.782,r:3.8,type:'road'});
+ // Two heso nails. The actual START mouth sits between/under them.
+ state.pins.push({x:W*.468,y:H*.797,r:4.6,type:'heso'});
+ state.pins.push({x:W*.532,y:H*.797,r:4.6,type:'heso'});
+}
+function bezier(p0,p1,p2,p3,t){
+ const u=1-t,tt=t*t,uu=u*u;
+ return {
+  x:uu*u*p0.x+3*uu*t*p1.x+3*u*tt*p2.x+tt*t*p3.x,
+  y:uu*u*p0.y+3*uu*t*p1.y+3*u*tt*p2.y+tt*t*p3.y
+ };
+}
+function shoot(){
+ if(state.balls<=0){setText('NO COIN','持ち玉がありません');return;}
+ sfx('shot',.18);state.balls--;ui();
+ const rush=state.rush;
+ state.shots.push({
+  x:state.W*.90,y:state.H*.92,vx:0,vy:0,r:4.6,
+  spin:(Math.random()-.5)*.045,active:true,
+  phase:'rail',railT:0,rush
+ });
+}
+function collide(b,p){
+ const dx=b.x-p.x,dy=b.y-p.y,d=Math.hypot(dx,dy),m=b.r+p.r;
+ if(d>0&&d<m){
+  const nx=dx/d,ny=dy/d;
+  b.x=p.x+nx*m;b.y=p.y+ny*m;
+  const dot=b.vx*nx+b.vy*ny;
+  if(dot<0){b.vx-=1.60*dot*nx;b.vy-=1.60*dot*ny;}
+  const damp=p.type==='heso'?.84:p.type==='guide'?.89:.88;
+  b.vx*=damp;b.vy*=damp;
+  b.vx+=(Math.random()-.5)*(p.type==='guide'?.30:.46);
+ }
+}
+function railPhysics(b){
+ b.railT=Math.min(1,b.railT+.032);
+ const W=state.W,H=state.H,t=b.railT;
+ let p;
+ if(b.rush){
+  // Right-play launcher: climb the right rail and enter the upper-right gate zone.
+  p=bezier(
+   {x:W*.90,y:H*.92},{x:W*1.02,y:H*.66},{x:W*.98,y:H*.48},{x:W*.82,y:H*.535},t
+  );
+ }else{
+  // Normal launcher: real-machine-like outer rail, then release from upper-left.
+  p=bezier(
+   {x:W*.90,y:H*.92},{x:W*1.02,y:H*.46},{x:W*.68,y:H*.30},{x:W*.165,y:H*.475},t
+  );
+ }
+ b.x=p.x;b.y=p.y;
+ if(t>=1){
+  b.phase='play';
+  if(b.rush){
+   b.vx=-.25-Math.random()*.55;b.vy=.55+Math.random()*.55;
+  }else{
+   b.vx=.45+Math.random()*2.35;b.vy=.20+Math.random()*.95;
+  }
+ }
+}
+function physics(){
+ const W=state.W,H=state.H,cx=W*.5;
+ for(const b of state.shots){
+  if(!b.active)continue;
+  if(b.phase==='rail'){railPhysics(b);continue;}
+  b.vy+=.205;b.vx*=.998;b.vy*=.999;b.vx+=b.spin;
+  // Right play is a separate path/gate rather than reusing the normal heso.
+  if(b.rush&&b.y>H*.53&&b.y<H*.72){
+   const gx=W*.82;
+   b.vx+=(gx-b.x)*.0018;
+  }
+  b.x+=b.vx;b.y+=b.vy;
+  if(b.x<b.r){b.x=b.r;b.vx=Math.abs(b.vx)*.74;}
+  if(b.x>W-b.r){b.x=W-b.r;b.vx=-Math.abs(b.vx)*.74;}
+  state.pins.forEach(p=>collide(b,p));
+
+  if(b.rush){
+   const gx=W*.82,gy=H*.665;
+   if(Math.hypot(b.x-gx,b.y-gy)<18+b.r){
+    b.active=false;b.y=H+50;queueSpin();continue;
+   }
+  }else{
+   // Rectangular START pocket below the two heso nails.
+   const mouthHalf=W*.004;
+   if(b.y>H*.800&&b.y<H*.852&&Math.abs(b.x-cx)<mouthHalf&&b.vy>0){
+    b.active=false;b.y=H+50;queueSpin();continue;
+   }
+  }
+  if(b.y>H+30)b.active=false;
+ }
+ state.shots=state.shots.filter(b=>b.active||b.y<=H);
+}
+function drawRail(){
+ const W=state.W,H=state.H;
+ ctx.save();
+ ctx.lineCap='round';
+ ctx.strokeStyle='rgba(83,219,255,.52)';ctx.lineWidth=4;
+ // Outer launch rail
+ ctx.beginPath();ctx.moveTo(W*.90,H*.92);
+ ctx.bezierCurveTo(W*1.02,H*.46,W*.68,H*.30,W*.165,H*.475);ctx.stroke();
+ // Inner rail, slightly inset, like a real guide-rail pair.
+ ctx.strokeStyle='rgba(190,245,255,.20)';ctx.lineWidth=2;
+ ctx.beginPath();ctx.moveTo(W*.865,H*.91);
+ ctx.bezierCurveTo(W*.96,H*.49,W*.66,H*.34,W*.185,H*.49);ctx.stroke();
+ ctx.restore();
+}
+function draw(){
+ const W=state.W,H=state.H;
+ ctx.clearRect(0,0,W,H);
+ drawRail();
+
+ // Playfield lower guide arcs.
+ ctx.strokeStyle='rgba(83,219,255,.24)';ctx.lineWidth=2;
+ ctx.beginPath();ctx.arc(W*.5,H*.70,W*.37,Math.PI*.12,Math.PI*.88);ctx.stroke();
+
+ // Steel nails
+ state.pins.forEach(p=>{
+  ctx.fillStyle=p.type==='heso'?'#fff4bb':p.type==='guide'?'#dffbff':'#d7f4f8';
+  ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='rgba(80,180,210,.75)';ctx.lineWidth=1;ctx.stroke();
+ });
+
+ // Heso/START pocket: two nails above a visible mouth, not a circular target.
+ const cx=W*.5,hy=H*.797;
+ ctx.fillStyle='rgba(3,15,23,.92)';
+ ctx.strokeStyle='#58e7ff';ctx.lineWidth=2.4;
+ ctx.beginPath();
+ ctx.moveTo(W*.472,hy+7);
+ ctx.lineTo(W*.478,H*.842);
+ ctx.quadraticCurveTo(cx,H*.865,W*.522,H*.842);
+ ctx.lineTo(W*.528,hy+7);
+ ctx.stroke();
+ ctx.fillStyle='#9ff6ff';ctx.font='bold 11px system-ui';ctx.textAlign='center';
+ ctx.fillText('START',cx,H*.858);
+
+ // Right gate for RUSH
+ if(state.rush){
+  const gx=W*.82,gy=H*.665;
+  ctx.strokeStyle='#c883ff';ctx.lineWidth=3;
+  ctx.beginPath();ctx.arc(gx,gy,18,0,Math.PI*2);ctx.stroke();
+  ctx.fillStyle='#ead7ff';ctx.font='bold 9px system-ui';ctx.fillText('RUSH',gx,gy+3);
+ }
+
+ // Launcher lamp
+ ctx.fillStyle=state.rush?'#c47cff':'#53dfff';
+ ctx.beginPath();ctx.arc(W*.90,H*.92,9,0,Math.PI*2);ctx.fill();
+
+ // Balls
+ state.shots.forEach(b=>{
+  ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='#8cdfff';ctx.lineWidth=1;ctx.stroke();
+ });
+}
+
 function loop(ts){if(state.firing&&ts-state.lastShot>CFG.shotInterval){shoot();state.lastShot=ts;}physics();draw();requestAnimationFrame(loop)}
 function beginFire(e){startBgm();if(e&&e.cancelable)e.preventDefault();if(!state.firing){state.firing=true;shoot();state.lastShot=performance.now();}}
 function endFire(e){if(e&&e.cancelable)e.preventDefault();state.firing=false}
